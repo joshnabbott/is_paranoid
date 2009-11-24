@@ -12,6 +12,7 @@ class Android < ActiveRecord::Base #:nodoc:
   has_many :dents
   has_many :dings, :through => :dents
   has_many :scratches, :through => :dents
+  has_many :holes, :through => :dents
   has_and_belongs_to_many :places
 
   # this code is to ensure that our destroy and restore methods
@@ -27,6 +28,7 @@ class Dent < ActiveRecord::Base #:nodoc:
   belongs_to :android
   has_many :dings
   has_many :scratches
+  has_many :holes
 end
 
 class Ding < ActiveRecord::Base #:nodoc:
@@ -36,6 +38,10 @@ end
 
 class Scratch < ActiveRecord::Base #:nodoc:
   is_paranoid
+  belongs_to :dent
+end
+
+class Hole < ActiveRecord::Base #:nodoc:
   belongs_to :dent
 end
 

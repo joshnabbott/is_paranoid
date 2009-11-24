@@ -25,6 +25,11 @@ ActiveRecord::Schema.define(:version => 20090317164830) do
     t.datetime "deleted_at"
   end
 
+  create_table "holes", :force => true do |t|
+    t.integer  "dent_id"
+    t.string   "description"
+  end
+
   create_table "androids_places", :force => true, :id => false do |t|
     t.integer  "android_id"
     t.integer  "place_id"

@@ -10,6 +10,10 @@ module IsParanoid
   # end
   #
 
+  def is_paranoid?
+    false
+  end
+
   def is_paranoid opts = {}
     opts[:field] ||= [:deleted_at, Proc.new{Time.now.utc}, nil]
     class_inheritable_accessor :destroyed_field, :field_destroyed, :field_not_destroyed
@@ -31,6 +35,10 @@ module IsParanoid
   end
 
   module ClassMethods
+    def is_paranoid?
+      true
+    end
+
     def is_or_equals_not_destroyed
       if [nil, 'NULL'].include?(field_not_destroyed)
         'IS NULL'
@@ -41,14 +49,17 @@ module IsParanoid
 
     # ensure that we respect the is_paranoid conditions when being loaded as a has_many :through
     # NOTE: this only works if is_paranoid is declared before has_many relationships.
+    # Only use is_paranoid conditions when the associated class is also paranoid
     def has_many(association_id, options = {}, &extension)
-       if options.key?(:through)
+      association_klass_name = options[:class_name] || options[:source] || association_id
+      association_klass      = association_klass_name.to_s.classify.try(:constantize)
+
+      if options.key?(:through) && association_klass.is_paranoid?
         conditions = "#{options[:through].to_s.pluralize}.#{destroyed_field} #{is_or_equals_not_destroyed}"
         options[:conditions] = "(" + [options[:conditions], conditions].compact.join(") AND (") + ")"
       end
       super
     end
-
 
     # Actually delete the model, bypassing the safety net. Because
     # this method is called internally by Model.delete(id) and on the
@@ -105,6 +116,11 @@ module IsParanoid
           end
         end
       end
+    end
+
+    # TODO: needs better implementation
+    def exists_with_destroyed id
+      self.with_exclusive_scope{ exists?(id)}
     end
 
     # find_with_destroyed and other blah_with_destroyed and
@@ -177,6 +193,10 @@ module IsParanoid
   end
 
   module InstanceMethods
+    def destroyed?
+      destroyed_field != nil
+    end
+
     def self.included(base)
       base.class_eval do
         unless method_defined? :method_missing
@@ -262,5 +282,4 @@ module IsParanoid
   end
 
 end
-
 ActiveRecord::Base.send(:extend, IsParanoid)

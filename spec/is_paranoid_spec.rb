@@ -22,6 +22,10 @@ describe IsParanoid do
   end
 
   describe 'non-is_paranoid models' do
+    it 'should not be paranoid' do
+      Person.is_paranoid?.should eql(false)
+    end
+
     it "should destroy as normal" do
       lambda{
         @luke.destroy
@@ -72,7 +76,7 @@ describe IsParanoid do
         Android.count_with_destroyed.should == 2
       end
 
-      it "shouldn't have problems with has_many :through relationships" do
+      it "shouldn't have problems with has_many :through relationships that are paranoid" do
         # TODO: this spec can be cleaner and more specific, replace it later
         # Dings use a boolean non-standard is_paranoid field
         # Scratch uses the defaults.  Testing both ensures compatibility
@@ -88,6 +92,20 @@ describe IsParanoid do
           @r2d2.reload
           @r2d2.send(method).should == []
         end
+      end
+
+      it "shouldn't have problems with has_many :through relationships that are not paranoid" do
+        @r2d2.dings.should == []
+
+        dent = Dent.create(:description => 'really terrible', :android_id => @r2d2.id)
+        hole = Hole.new(:description => 'What a big hole', :dent_id => dent.id)
+
+        @r2d2.reload
+        @r2d2.holes.should == [hole]
+
+        hole.destroy
+        @r2d2.reload
+        @r2d2.holes.should == []
       end
 
       it "should not choke has_and_belongs_to_many relationships" do
